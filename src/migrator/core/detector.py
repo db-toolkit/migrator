@@ -17,17 +17,20 @@ class ModelDetector:
     def find_base(cls, explicit_path: Optional[str] = None) -> Optional[Any]:
         """Find SQLAlchemy declarative base"""
         cls.searched_paths = []
+        cls._detected_import_path = None
         
         if explicit_path:
             cls.searched_paths.append(explicit_path)
             base = cls._try_explicit_path(explicit_path)
             if base:
+                cls._detected_import_path = explicit_path if ":" in explicit_path else f"{explicit_path}.Base"
                 return base
         
         for path in COMMON_MODEL_PATHS:
             cls.searched_paths.append(path)
             base = cls._try_import(path)
             if base:
+                cls._detected_import_path = f"{path}.Base"
                 return base
 
         cls.searched_paths.append("project scan")
@@ -76,23 +79,31 @@ class ModelDetector:
             pass
         return None
 
-    @staticmethod
-    def _scan_project() -> Optional[Any]:
-        """Scan .py files for Base classes"""
+    @classmethod
+    def _scan_project(cls) -> Optional[Any]:
+        """Scan .py files for Base classes and return with proper import path"""
         for py_file in Path.cwd().rglob("*.py"):
             if any(excluded in str(py_file) for excluded in EXCLUDED_DIRS):
                 continue
 
             try:
-                module_name = py_file.stem
-                spec = importlib.util.spec_from_file_location(module_name, py_file)
-                if not spec or not spec.loader:
-                    continue
-
-                sys.path.insert(0, str(py_file.parent))
-                module = importlib.util.module_from_spec(spec)
-                sys.modules[module_name] = module
-                spec.loader.exec_module(module)
+                # Calculate proper module path relative to project root
+                relative_path = py_file.relative_to(Path.cwd())
+                module_parts = list(relative_path.parts[:-1]) + [relative_path.stem]
+                module_path = ".".join(module_parts)
+                
+                # Try to import using the proper module path
+                sys.path.insert(0, str(Path.cwd()))
+                try:
+                    module = importlib.import_module(module_path)
+                except ImportError:
+                    # Fallback to file-based loading
+                    spec = importlib.util.spec_from_file_location(module_path, py_file)
+                    if not spec or not spec.loader:
+                        continue
+                    module = importlib.util.module_from_spec(spec)
+                    sys.modules[module_path] = module
+                    spec.loader.exec_module(module)
 
                 for name, obj in inspect.getmembers(module):
                     if (
@@ -101,7 +112,14 @@ class ModelDetector:
                         and hasattr(obj, "registry")
                         and not obj.__module__.startswith("sqlalchemy")
                     ):
+                        # Store the proper import path
+                        cls._detected_import_path = f"{module_path}.Base"
                         return obj
             except Exception:
                 continue
         return None
+    
+    @classmethod
+    def get_detected_import_path(cls) -> Optional[str]:
+        """Get the detected import path for Base"""
+        return getattr(cls, '_detected_import_path', None)

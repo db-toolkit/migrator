@@ -66,6 +66,11 @@ def init(
         info("Finding SQLAlchemy Base...")
         base = ModelDetector.find_base(explicit_path=base_path)
         
+        # Get the detected import path
+        detected_path = ModelDetector.get_detected_import_path()
+        if detected_path:
+            config.base_import_path = detected_path
+        
         if not base:
             error("Could not find SQLAlchemy Base class")
             
@@ -86,29 +91,8 @@ def init(
         
         if verbose:
             info(f"Found Base in: {base.__module__}")
-
-        # Get the module where Base was actually defined (not sqlalchemy)
-        import inspect
-
-        base_module = inspect.getmodule(base)
-        if base_module and not base_module.__name__.startswith("sqlalchemy"):
-            config.base_import_path = f"{base_module.__name__}.Base"
-        else:
-            # Fallback: scan for the file that has Base
-            for py_file in Path.cwd().rglob("*.py"):
-                if "venv" in str(py_file) or "site-packages" in str(py_file):
-                    continue
-                try:
-                    content = py_file.read_text()
-                    if (
-                        "Base = declarative_base()" in content
-                        or "Base=declarative_base()" in content
-                    ):
-                        module_name = py_file.stem
-                        config.base_import_path = f"{module_name}.Base"
-                        break
-                except Exception:
-                    continue
+            if config.base_import_path:
+                info(f"Using import path: {config.base_import_path}")
 
         info(f"Initializing migrations in {directory}...")
         backend = AlembicBackend(config)
@@ -140,6 +124,12 @@ def makemigrations(
         
         if autogenerate and not config.base_import_path:
             base = ModelDetector.find_base(explicit_path=base_path)
+            
+            # Get the detected import path
+            detected_path = ModelDetector.get_detected_import_path()
+            if detected_path:
+                config.base_import_path = detected_path
+            
             if not base:
                 error("Could not find SQLAlchemy Base class")
                 console.print("\n💡 Troubleshooting Tips:")
