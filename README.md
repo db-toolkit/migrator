@@ -11,7 +11,6 @@ Migrator automates what Alembic requires developers to set up manually — makin
 - **Auto-detect models** — finds SQLAlchemy Base classes automatically
 - **Smart config** — no need to manually edit alembic.ini or env.py
 - **Framework agnostic** — works with FastAPI, Flask, or standalone SQLAlchemy
-- **Pythonic CLI** — clean, readable, extensible commands
 
 ## 📦 Installation
 
@@ -22,8 +21,6 @@ curl -sSL https://raw.githubusercontent.com/Adelodunpeter25/migrator/main/instal
 # Or using pip
 pip install migrator-cli
 
-# Or using uv
-uv add migrator-cli
 ```
 
 ## 🚀 Quick Start
@@ -37,8 +34,6 @@ Create a `.env` file:
 ```bash
 DATABASE_URL=postgresql://user:password@localhost:5432/dbname
 ```
-
-Or use `settings.py`, `config.py`, `config.yaml`, or `config.toml`.
 
 ### 2. Initialize migrations
 

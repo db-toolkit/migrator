@@ -132,6 +132,7 @@ def makemigrations(
     message: str = typer.Argument(None, help="Migration description"),
     autogenerate: bool = typer.Option(True, "--auto/--manual", help="Auto-generate migration"),
     base_path: str = typer.Option(None, "--base", "-b", help="Base class path"),
+    show_sql: bool = typer.Option(False, "--show-sql", help="Show SQL that will be generated"),
 ):
     """Create new migration"""
     try:
@@ -168,9 +169,14 @@ def makemigrations(
         backend = AlembicBackend(config)
 
         info(f"Creating migration: {message}")
-        migration_path = backend.create_migration(message, autogenerate)
+        migration_path = backend.create_migration(message, autogenerate, use_timestamp=True)
 
         success(f"Migration created: {migration_path}")
+        
+        if show_sql:
+            console.print("\n📄 Generated SQL:")
+            sql = backend.show_migration_sql()
+            console.print(sql)
 
     except Exception as e:
         error(f"Migration creation failed: {e}")
@@ -181,6 +187,7 @@ def makemigrations(
 def migrate(
     revision: str = typer.Option("head", "--revision", "-r", help="Target revision"),
     dry_run: bool = typer.Option(False, "--dry-run", help="Show SQL without executing"),
+    yes: bool = typer.Option(False, "--yes", "-y", help="Skip confirmation prompt"),
 ):
     """Apply migrations"""
     try:
@@ -212,8 +219,20 @@ def migrate(
 
         if dry_run:
             info("Dry-run mode: showing SQL only")
-            info("Note: Alembic doesn't support native dry-run. Use --sql flag instead.")
+            console.print("\n📄 SQL Preview:")
+            sql = backend.show_migration_sql(revision)
+            console.print(sql)
             return
+
+        # Get pending migrations for confirmation
+        from migrator.core.migration_operations import MigrationOperations
+        pending = MigrationOperations.get_pending_migrations_details(backend.alembic_cfg)
+        
+        # Show confirmation prompt unless --yes flag is used
+        if pending and not yes:
+            if not MigrationOperations.confirm_migration(pending):
+                info("Migration cancelled")
+                return
 
         info(f"Current revision: {current or 'None'}")
         info(f"Upgrading to: {revision}")

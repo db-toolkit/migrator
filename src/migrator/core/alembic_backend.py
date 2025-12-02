@@ -106,10 +106,19 @@ datefmt = %H:%M:%S
         with open(ini_path, "w") as f:
             f.write(ini_content)
 
-    def create_migration(self, message: str, autogenerate: bool = True) -> Path:
+    def create_migration(self, message: str, autogenerate: bool = True, use_timestamp: bool = True) -> Path:
         """Create new migration"""
+        if use_timestamp:
+            from migrator.core.migration_operations import MigrationOperations
+            message = MigrationOperations.generate_timestamped_message(message)
+        
         command.revision(self.alembic_cfg, message=message, autogenerate=autogenerate)
         return self._get_latest_migration()
+    
+    def show_migration_sql(self, revision: str = "head") -> str:
+        """Show SQL for migration without applying"""
+        from migrator.core.migration_operations import MigrationOperations
+        return MigrationOperations.show_migration_sql(self.alembic_cfg, revision)
 
     def _get_latest_migration(self) -> Path:
         """Get path to latest migration file"""
