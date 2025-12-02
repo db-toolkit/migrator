@@ -7,7 +7,7 @@ All notable changes to this project will be documented in this file.
 ### Added
 - Optional migration messages with auto-generation
 - Better error messages with context-specific troubleshooting tips
-- Suppressed repeated async driver warnings
+- `--version` command to show CLI version
 
 ## [0.4.0] - 2025-11-17
 

@@ -9,9 +9,31 @@ from migrator.core.config import MigratorConfig
 from migrator.core.detector import ModelDetector
 from migrator.core.logger import error, info, success
 from migrator.utils.validators import sanitize_message, validate_database_url
+from migrator.version import __version__
 
 app = typer.Typer(help="🧩 Migrator - Universal Migration CLI")
 console = Console()
+
+
+def version_callback(value: bool):
+    if value:
+        console.print(f"Migrator CLI v{__version__}")
+        raise typer.Exit()
+
+
+@app.callback()
+def main(
+    version: bool = typer.Option(
+        None,
+        "--version",
+        "-v",
+        help="Show version and exit",
+        callback=version_callback,
+        is_eager=True,
+    )
+):
+    """Migrator - Universal Migration CLI for Python apps"""
+    pass
 
 
 @app.command()

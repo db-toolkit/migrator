@@ -1,3 +1,5 @@
 """Migrator - Universal migration CLI for Python apps"""
 
-__version__ = "0.4.1"
+from migrator.version import __version__
+
+__all__ = ["__version__"]

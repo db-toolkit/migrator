@@ -24,6 +24,17 @@ pip3 install --user git+https://github.com/Adelodunpeter25/migrator.git
 
 echo "✅ Migrator installed successfully!"
 echo ""
+
+# Verify installation
+echo "🔍 Verifying installation..."
+if command -v migrator &> /dev/null; then
+    migrator --version
+else
+    echo "⚠️  Warning: 'migrator' command not found in PATH"
+    echo "You may need to add ~/.local/bin to your PATH"
+fi
+
+echo ""
 echo "📖 Quick start:"
 echo "  1. Set DATABASE_URL in .env file"
 echo "  2. Run: migrator init"
