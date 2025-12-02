@@ -14,6 +14,9 @@ All notable changes to this project will be documented in this file.
 - `--yes` flag for migrate command to skip confirmation
 - Confirmation prompt before applying migrations
 
+### Fixed
+- Base class import path detection for nested project structures
+
 ## [0.4.0] - 2025-11-17
 
 ### Fixed
@@ -41,11 +44,6 @@ All notable changes to this project will be documented in this file.
 - Base class detection in nested structures
 - Async SQLAlchemy URL compatibility
 - Poor error messages - now shows searched paths and helpful hints
-
-### Documentation
-- Added advanced usage section to README
-- Updated MIGRATION_GUIDE.md with nested structure examples
-- Added troubleshooting for common issues
 
 ## [0.2.0] - 2025-11-11
 
