@@ -24,6 +24,8 @@ class ConfigLoader:
             current = current.parent
         return None
 
+    _async_warning_shown = False
+
     @staticmethod
     def _normalize_database_url(url: str) -> str:
         """Convert async database URLs to sync for Alembic compatibility"""
@@ -35,9 +37,12 @@ class ConfigLoader:
         
         for async_driver, sync_driver in async_drivers.items():
             if async_driver in url:
-                from migrator.core.logger import warning
-                warning(f"Detected async driver: {async_driver}")
-                warning(f"Converting to sync for Alembic: {sync_driver or 'default'}")
+                # Only show warning once per session
+                if not ConfigLoader._async_warning_shown:
+                    from migrator.core.logger import warning
+                    warning(f"Detected async driver: {async_driver}")
+                    warning(f"Converting to sync for Alembic: {sync_driver or 'default'}")
+                    ConfigLoader._async_warning_shown = True
                 url = url.replace(async_driver, sync_driver)
                 break
         

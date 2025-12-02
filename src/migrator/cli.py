@@ -53,10 +53,12 @@ def init(
                 if len(searched) > 5:
                     info(f"... and {len(searched) - 5} more locations")
             
-            console.print("\n💡 Hints:")
-            console.print("  1. Use --base flag: migrator init --base app.core.database:Base")
-            console.print("  2. Ensure Base = declarative_base() exists in your code")
-            console.print("  3. Check that your models are importable")
+            console.print("\n💡 Troubleshooting Tips:")
+            console.print("  1. Ensure your models inherit from Base")
+            console.print("  2. Check if Base = declarative_base() exists")
+            console.print("  3. Verify models are imported in __init__.py")
+            console.print("  4. Use --base flag: migrator init --base app.core.database:Base")
+            console.print("  5. Check that DATABASE_URL is correctly set")
             
             raise typer.Exit(1)
         
@@ -105,7 +107,7 @@ def init(
 
 @app.command()
 def makemigrations(
-    message: str = typer.Argument(..., help="Migration description"),
+    message: str = typer.Argument(None, help="Migration description"),
     autogenerate: bool = typer.Option(True, "--auto/--manual", help="Auto-generate migration"),
     base_path: str = typer.Option(None, "--base", "-b", help="Base class path"),
 ):
@@ -117,17 +119,32 @@ def makemigrations(
             base = ModelDetector.find_base(explicit_path=base_path)
             if not base:
                 error("Could not find SQLAlchemy Base class")
-                info("Hint: Use --base flag or run 'migrator init' first")
+                console.print("\n💡 Troubleshooting Tips:")
+                console.print("  1. Ensure your models inherit from Base")
+                console.print("  2. Check if Base = declarative_base() exists")
+                console.print("  3. Verify models are imported in __init__.py")
+                console.print("  4. Use --base flag: migrator makemigrations --base app.db:Base")
                 raise typer.Exit(1)
 
         if not validate_database_url(config.database_url):
             error("Invalid database URL format")
+            console.print("\n💡 Troubleshooting Tips:")
+            console.print("  1. Check DATABASE_URL in .env file")
+            console.print("  2. Format: postgresql://user:pass@host:port/dbname")
+            console.print("  3. Ensure database credentials are correct")
             raise typer.Exit(1)
 
-        message = sanitize_message(message)
+        # Auto-generate message if not provided
         if not message:
-            error("Migration message cannot be empty")
-            raise typer.Exit(1)
+            from datetime import datetime
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            message = f"auto_migration_{timestamp}"
+            info(f"No message provided, using: {message}")
+        else:
+            message = sanitize_message(message)
+            if not message:
+                error("Migration message cannot be empty")
+                raise typer.Exit(1)
 
         backend = AlembicBackend(config)
 
@@ -188,8 +205,25 @@ def migrate(
 
     except Exception as e:
         error(f"Migration failed: {e}")
-        if "foreign key constraint" in str(e).lower():
-            console.print("\n💡 Tip: Use 'migrator stamp head' to mark existing database as migrated")
+        error_msg = str(e).lower()
+        
+        console.print("\n💡 Troubleshooting Tips:")
+        if "foreign key constraint" in error_msg:
+            console.print("  1. Use 'migrator stamp head' to mark existing database as migrated")
+            console.print("  2. Check if tables already exist in the database")
+        elif "no module named" in error_msg:
+            console.print("  1. Ensure all model files are importable")
+            console.print("  2. Check if __init__.py exists in model directories")
+            console.print("  3. Verify PYTHONPATH includes your project root")
+        elif "connection" in error_msg or "refused" in error_msg:
+            console.print("  1. Check if database server is running")
+            console.print("  2. Verify DATABASE_URL credentials are correct")
+            console.print("  3. Ensure database exists and is accessible")
+        else:
+            console.print("  1. Check migration files for syntax errors")
+            console.print("  2. Verify database connection is working")
+            console.print("  3. Run 'migrator status' to check current state")
+        
         raise typer.Exit(1)
 
 
