@@ -2,12 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.1] - 2025-11-17
+
+### Added
+- Optional migration messages with auto-generation
+- Better error messages with context-specific troubleshooting tips
+- Suppressed repeated async driver warnings
+
 ## [0.4.0] - 2025-11-17
 
 ### Fixed
 - Automatic Python path handling in migration environment
 - History status calculation showing correct applied/pending status
-- Migration commands no longer require manual PYTHONPATH setup
 
 ### Improved
 - Better migration status tracking after downgrade and stamp operations

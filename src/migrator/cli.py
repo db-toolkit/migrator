@@ -142,9 +142,6 @@ def makemigrations(
             info(f"No message provided, using: {message}")
         else:
             message = sanitize_message(message)
-            if not message:
-                error("Migration message cannot be empty")
-                raise typer.Exit(1)
 
         backend = AlembicBackend(config)
 
