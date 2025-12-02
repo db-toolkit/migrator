@@ -62,8 +62,17 @@ migrator init
 # Create new migration
 migrator makemigrations "add email to users"
 
+# Create migration and show SQL
+migrator makemigrations "add email to users" --show-sql
+
 # Apply migrations
 migrator migrate
+
+# Apply migrations without confirmation
+migrator migrate --yes
+
+# Preview migration SQL without applying
+migrator migrate --dry-run
 
 # Rollback migrations
 migrator downgrade

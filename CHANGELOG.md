@@ -2,12 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.4.1] - 2025-11-17
+## [0.4.1] - 2025-12-02
 
 ### Added
 - Optional migration messages with auto-generation
 - Better error messages with context-specific troubleshooting tips
 - `--version` command to show CLI version
+- Timestamped migration filenames (YYYYMMDD_HHMMSS_message)
+- `--show-sql` flag for makemigrations command
+- `--dry-run` flag for migrate command to preview SQL
+- `--yes` flag for migrate command to skip confirmation
+- Confirmation prompt before applying migrations
 
 ## [0.4.0] - 2025-11-17
 
