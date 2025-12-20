@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.2] - 2025-12-20
+
+### Changed
+- Migrated repository to db-toolkit organization
+- Updated all GitHub URLs from personal repo to https://github.com/db-toolkit/migrator
+
 ## [0.4.1] - 2025-12-02
 
 ### Added
