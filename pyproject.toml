@@ -36,10 +36,10 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/Adelodunpeter25/migrator"
-Repository = "https://github.com/Adelodunpeter25/migrator"
-Issues = "https://github.com/Adelodunpeter25/migrator/issues"
-Changelog = "https://github.com/Adelodunpeter25/migrator/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/db-toolkit/migrator"
+Repository = "https://github.com/db-toolkit/migrator"
+Issues = "https://github.com/db-toolkit/migrator/issues"
+Changelog = "https://github.com/db-toolkit/migrator/blob/main/CHANGELOG.md"
 
 [project.scripts]
 migrator = "migrator.cli:app"

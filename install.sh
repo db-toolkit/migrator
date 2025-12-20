@@ -20,7 +20,7 @@ fi
 
 # Install using pip
 echo "📦 Installing migrator..."
-pip3 install --user git+https://github.com/Adelodunpeter25/migrator.git
+pip3 install --user git+https://github.com/db-toolkit/migrator.git
 
 echo "✅ Migrator installed successfully!"
 echo ""
@@ -41,4 +41,4 @@ echo "  2. Run: migrator init"
 echo "  3. Run: migrator makemigrations \"your message\""
 echo "  4. Run: migrator migrate"
 echo ""
-echo "For more info: https://github.com/Adelodunpeter25/migrator"
+echo "For more info: https://github.com/db-toolkit/migrator"

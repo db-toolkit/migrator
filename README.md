@@ -16,7 +16,7 @@ Migrator automates what Alembic requires developers to set up manually — makin
 
 ```bash
 # Quick install
-curl -sSL https://raw.githubusercontent.com/Adelodunpeter25/migrator/main/install.sh | bash
+curl -sSL https://raw.githubusercontent.com/db-toolkit/migrator/main/install.sh | bash
 
 # Or using pip
 pip install migrator-cli
