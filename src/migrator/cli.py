@@ -286,7 +286,6 @@ def history():
         backend = AlembicBackend(config)
 
         migrations = backend.history()
-        current = backend.current()
 
         if not migrations:
             info("No migrations found")

@@ -1,9 +1,5 @@
 """Tests for MigrationOperations"""
 import os
-from pathlib import Path
-from unittest.mock import MagicMock
-
-import pytest
 
 from migrator.core.migration_operations import MigrationOperations
 
@@ -33,7 +29,6 @@ def test_confirm_migration_non_interactive_proceeds(capsys):
 
 def test_show_migration_sql_returns_string(temp_dir):
     """show_migration_sql returns a string (may be empty if no migrations)"""
-    import os
     from migrator.core.alembic_backend import AlembicBackend
     from migrator.core.config import MigratorConfig
 

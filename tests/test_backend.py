@@ -84,15 +84,15 @@ def test_check_existing_tables_empty(sqlite_config):
 
 def test_check_existing_tables_after_create(sqlite_config, temp_dir):
     """check_existing_tables detects tables created outside migrations"""
-    Base = declarative_base()
+    base = declarative_base()  # noqa: N806
 
-    class User(Base):
+    class User(base):  # noqa: N806
         __tablename__ = "users"
         id = Column(Integer, primary_key=True)
         name = Column(String)
 
     engine = create_engine(sqlite_config.database_url)
-    Base.metadata.create_all(engine)
+    base.metadata.create_all(engine)
     engine.dispose()
 
     backend = AlembicBackend(sqlite_config)

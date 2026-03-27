@@ -97,7 +97,9 @@ def test_env_py_contains_model_imports(temp_dir):
 
     import os
     from pathlib import Path
+
     from typer.testing import CliRunner
+
     from migrator.cli import app
 
     runner = CliRunner()

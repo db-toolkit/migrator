@@ -49,7 +49,6 @@ class MigrationOperations:
     def show_migration_sql(alembic_cfg: Config, revision: str = "head") -> str:
         """Generate SQL for migration without applying"""
         import io
-        import sys
         from contextlib import redirect_stdout
 
         output = io.StringIO()
