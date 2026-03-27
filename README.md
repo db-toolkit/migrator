@@ -16,16 +16,16 @@ Migrator automates what Alembic requires developers to set up manually — makin
 
 ```bash
 # SQLite / no extras needed
-pip install migrator-cli
+uv add migrator-cli
 
 # PostgreSQL
-pip install migrator-cli[postgres]
+uv add migrator-cli[postgres]
 
 # MySQL
-pip install migrator-cli[mysql]
+uv add migrator-cli[mysql]
 
 # All database drivers
-pip install migrator-cli[all]
+uv add migrator-cli[all]
 ```
 
 Requires Python 3.11+.
