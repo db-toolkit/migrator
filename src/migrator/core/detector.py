@@ -18,6 +18,13 @@ class ModelDetector:
         """Find SQLAlchemy declarative base"""
         cls.searched_paths = []
         cls._detected_import_path = None
+
+        # Clear cached project modules from previous calls so stale imports
+        # don't cause early returns (e.g. across test runs).
+        _project_roots = {p.split(".")[0] for p in COMMON_MODEL_PATHS}
+        for key in list(sys.modules.keys()):
+            if key.split(".")[0] in _project_roots:
+                del sys.modules[key]
         
         if explicit_path:
             cls.searched_paths.append(explicit_path)

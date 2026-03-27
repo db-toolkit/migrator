@@ -197,7 +197,10 @@ def migrate(
             console.print("  2. Continue anyway (may cause conflicts)")
             console.print("  3. Cancel")
 
-            choice = typer.prompt("\nChoice", type=int, default=3)
+            try:
+                choice = typer.prompt("\nChoice", type=int, default=3)
+            except typer.Abort:
+                choice = 3
 
             if choice == 1:
                 backend.stamp(revision)

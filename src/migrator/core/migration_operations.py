@@ -2,6 +2,7 @@
 from datetime import datetime
 from pathlib import Path
 from typing import List, Optional
+import sys
 
 from alembic import command
 from alembic.config import Config
@@ -49,28 +50,26 @@ class MigrationOperations:
     def show_migration_sql(alembic_cfg: Config, revision: str = "head") -> str:
         """Generate SQL for migration without applying"""
         import io
-        from contextlib import redirect_stdout
-        
         output = io.StringIO()
-        
-        # Configure for SQL output
-        alembic_cfg.set_main_option("sqlalchemy.url", alembic_cfg.get_main_option("sqlalchemy.url"))
-        
-        with redirect_stdout(output):
-            command.upgrade(alembic_cfg, revision, sql=True)
-        
+        alembic_cfg.stdout = output
+        command.upgrade(alembic_cfg, revision, sql=True)
+        alembic_cfg.stdout = sys.stdout
         return output.getvalue()
 
     @staticmethod
     def confirm_migration(pending_migrations: List[dict]) -> bool:
         """Ask user to confirm migration"""
         import typer
-        
+
         if not pending_migrations:
             return True
-        
+
         print(f"\n➜ About to apply {len(pending_migrations)} migration(s):")
         for mig in pending_migrations:
             print(f"  • {mig['revision'][:12]} - {mig['message']}")
-        
-        return typer.confirm("\nContinue?", default=True)
+
+        try:
+            return typer.confirm("\nContinue?", default=True)
+        except typer.Abort:
+            # Non-interactive mode — default to proceeding
+            return True

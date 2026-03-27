@@ -138,35 +138,43 @@ datefmt = %H:%M:%S
         command.downgrade(self.alembic_cfg, revision)
 
     def history(self) -> List[dict]:
-        """Get migration history with correct status"""
+        """Get migration history with correct applied status"""
         script_dir = ScriptDirectory.from_config(self.alembic_cfg)
-        current_rev = self.current()
-        revisions = []
-        
-        # Get all revisions in chronological order
-        all_revisions = list(reversed(list(script_dir.walk_revisions())))
-        
-        # Determine which revisions are applied
-        applied_revisions = set()
-        if current_rev:
-            # Find current revision and mark all up to it as applied
-            for i, revision in enumerate(all_revisions):
-                applied_revisions.add(revision.revision)
-                if revision.revision == current_rev:
-                    break
-        
-        for revision in all_revisions:
-            status = "applied" if revision.revision in applied_revisions else "pending"
-            revisions.append(
-                {
-                    "revision": revision.revision,
-                    "message": revision.doc or "No message",
-                    "down_revision": revision.down_revision,
-                    "status": status,
-                }
-            )
+        engine = create_engine(self.config.database_url)
 
-        return revisions
+        with engine.connect() as connection:
+            context = MigrationContext.configure(connection)
+            applied_revisions = set(context.get_current_heads())
+            # Walk back through down_revisions to find all applied
+            heads = list(applied_revisions)
+            for head in heads:
+                rev = script_dir.get_revision(head)
+                while rev and rev.down_revision:
+                    down = rev.down_revision
+                    if isinstance(down, tuple):
+                        for d in down:
+                            applied_revisions.add(d)
+                            heads.append(d)
+                    else:
+                        applied_revisions.add(down)
+                        heads.append(down)
+                    rev = script_dir.get_revision(down if not isinstance(down, tuple) else down[0])
+
+        all_revisions = list(reversed(list(script_dir.walk_revisions())))
+        return [
+            {
+                "revision": r.revision,
+                "message": r.doc or "No message",
+                "down_revision": r.down_revision,
+                "status": "applied" if r.revision in applied_revisions else "pending",
+            }
+            for r in all_revisions
+        ]
+
+    def get_pending_migrations(self) -> List[dict]:
+        """Get list of pending migrations"""
+        from migrator.core.migration_operations import MigrationOperations
+        return MigrationOperations.get_pending_migrations_details(self.alembic_cfg)
 
     def current(self) -> Optional[str]:
         """Get current revision"""
@@ -188,21 +196,4 @@ datefmt = %H:%M:%S
         inspector = inspect(engine)
         return inspector.get_table_names()
 
-    def get_pending_migrations(self) -> List[dict]:
-        """Get list of pending migrations"""
-        script_dir = ScriptDirectory.from_config(self.alembic_cfg)
-        current = self.current()
-        pending = []
 
-        for revision in script_dir.walk_revisions():
-            if current is None or revision.revision != current:
-                pending.append(
-                    {
-                        "revision": revision.revision,
-                        "message": revision.doc or "No message",
-                    }
-                )
-            else:
-                break
-
-        return list(reversed(pending))

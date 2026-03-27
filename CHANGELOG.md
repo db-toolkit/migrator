@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Fixed
+- `migrate` command now correctly handles non-interactive environments (e.g. CI, test runners) — `typer.Abort` from `typer.confirm` and `typer.prompt` no longer causes a silent failure; confirmation defaults to proceeding and the existing-tables prompt defaults to cancel
+- `ModelDetector.find_base()` no longer returns stale results from previous calls — project-level modules matching common model paths are now cleared from `sys.modules` at the start of each detection run, preventing incorrect early returns across repeated invocations
+- `show_migration_sql` now correctly captures Alembic SQL output by setting `alembic_cfg.stdout` directly instead of using `redirect_stdout`, which Alembic does not respect
+- `history()` applied/pending status is now accurate for branched migration histories — replaced linear walk with `get_current_heads()` + `down_revision` traversal
+- Removed duplicate `get_pending_migrations` implementation in `AlembicBackend`; now delegates to `MigrationOperations.get_pending_migrations_details()`
+
 ## [0.4.2] - 2025-12-20
 
 ### Changed
