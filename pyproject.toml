@@ -34,8 +34,8 @@ dependencies = [
 
 [project.optional-dependencies]
 postgres = ["psycopg2-binary>=2.9.0"]
-mysql = ["pymysql>=1.0.0"]
-all = ["psycopg2-binary>=2.9.0", "pymysql>=1.0.0"]
+mysql = ["pymysql>=1.0.0", "cryptography>=41.0.0"]
+all = ["psycopg2-binary>=2.9.0", "pymysql>=1.0.0", "cryptography>=41.0.0"]
 
 [project.urls]
 Homepage = "https://github.com/db-toolkit/migrator"
@@ -59,6 +59,7 @@ packages = ["src/migrator"]
 [dependency-groups]
 dev = [
     "black>=23.0.0",
+    "cryptography>=46.0.6",
     "pymysql>=1.0.0",
     "pytest>=7.0.0",
     "pytest-cov>=4.0.0",

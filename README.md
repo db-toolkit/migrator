@@ -15,13 +15,20 @@ Migrator automates what Alembic requires developers to set up manually — makin
 ## 📦 Installation
 
 ```bash
-# Quick install
-curl -sSL https://raw.githubusercontent.com/db-toolkit/migrator/main/install.sh | bash
-
-# Or using pip
+# SQLite / no extras needed
 pip install migrator-cli
 
+# PostgreSQL
+pip install migrator-cli[postgres]
+
+# MySQL
+pip install migrator-cli[mysql]
+
+# All database drivers
+pip install migrator-cli[all]
 ```
+
+Requires Python 3.11+.
 
 ## 🚀 Quick Start
 
