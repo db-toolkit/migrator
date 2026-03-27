@@ -6,13 +6,19 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 - Auto-detection of model modules — `migrator init` now scans the project for all classes that subclass the detected `Base` and adds them as imports in the generated `env.py`, so Alembic autogenerate sees all tables without manual configuration
+- MySQL support via `uv add migrator-cli[mysql]` (includes `pymysql` and `cryptography`)
+- `[all]` extra installs all database drivers: `uv add migrator-cli[all]`
+- Minimum Python version raised to 3.11
+
+### Changed
+- `psycopg2-binary` moved from core dependencies to `[postgres]` / `[all]` optional extras — SQLite and MySQL users no longer install it unnecessarily
+- `alembic.ini` no longer contains hardcoded database credentials — URL is loaded from `DATABASE_URL` at runtime in `env.py`, making `alembic.ini` safe to commit
 
 ### Fixed
-- `migrate` command no longer silently fails in non-interactive environments (CI, pipes) — `typer.Abort` from confirmation prompts is now handled gracefully, defaulting to proceed
-- `alembic.ini` no longer contains hardcoded database credentials — URL is now loaded from `DATABASE_URL` environment variable at runtime in `env.py`, making `alembic.ini` safe to commit
-- `show_migration_sql` (`--dry-run`, `--show-sql`) now correctly captures and displays SQL — previously produced empty output due to Alembic not respecting `redirect_stdout`
-- `history` command applied/pending status is now correct for branched migration histories — previously used a flawed linear walk that misreported status after merges or multiple heads
-- `ModelDetector` no longer returns stale results when called multiple times in the same process — previously cached project modules in `sys.modules` could cause incorrect early returns
+- `migrate` command no longer silently fails in non-interactive environments (CI, pipes) — confirmation prompts default to proceeding
+- `show_migration_sql` (`--dry-run`, `--show-sql`) now correctly captures and displays SQL output
+- `history` command applied/pending status is now correct for branched migration histories
+- `ModelDetector` no longer returns stale results when called multiple times in the same process
 
 ## [0.4.2] - 2025-12-20
 
