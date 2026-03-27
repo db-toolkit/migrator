@@ -60,6 +60,7 @@ packages = ["src/migrator"]
 dev = [
     "black>=23.0.0",
     "cryptography>=46.0.6",
+    "migrator-cli[postgres]",
     "pymysql>=1.0.0",
     "pytest>=7.0.0",
     "pytest-cov>=4.0.0",
@@ -96,3 +97,6 @@ exclude_lines = [
     "raise NotImplementedError",
     "if __name__ == .__main__.:",
 ]
+
+[tool.uv.sources]
+migrator-cli = { workspace = true }

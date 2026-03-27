@@ -13,3 +13,12 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: migrator
+      POSTGRES_PASSWORD: migrator
+      POSTGRES_DB: migrator_test
+    ports:
+      - "5433:5432"
