@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [0.5.0] - 2026-03-27
 
 ### Added
 - Auto-detection of model modules — `migrator init` now scans the project for all classes that subclass the detected `Base` and adds them as imports in the generated `env.py`, so Alembic autogenerate sees all tables without manual configuration

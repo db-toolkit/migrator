@@ -1,6 +1,6 @@
 [project]
 name = "migrator-cli"
-version = "0.4.2"
+version = "0.5.0"
 description = "Universal migration CLI for Python apps"
 readme = "README.md"
 requires-python = ">=3.11"
