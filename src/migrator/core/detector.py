@@ -24,11 +24,13 @@ class ModelDetector:
         if cwd not in sys.path:
             sys.path.insert(0, cwd)
 
-        # Clear cached project modules from previous calls so stale imports
-        # don't cause early returns (e.g. across test runs).
+        # Clear cached project modules whose file is not under current cwd
         _project_roots = {p.split(".")[0] for p in COMMON_MODEL_PATHS}
         for key in list(sys.modules.keys()):
-            if key.split(".")[0] in _project_roots:
+            if key.split(".")[0] not in _project_roots:
+                continue
+            mod_file = getattr(sys.modules[key], "__file__", None)
+            if mod_file is None or not mod_file.startswith(cwd):
                 del sys.modules[key]
 
         if explicit_path:

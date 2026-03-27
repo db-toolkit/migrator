@@ -7,6 +7,7 @@ Requires a running MySQL instance. Start with:
 Tests are skipped automatically if MySQL is not reachable.
 """
 import os
+import sys
 from pathlib import Path
 
 import pytest
@@ -73,8 +74,8 @@ def test_mysql_full_migration_workflow(mysql_config, tmp_path, monkeypatch):
     import os
     from sqlalchemy import create_engine, inspect as sa_inspect
 
-    # Write a simple model
-    (tmp_path / "models.py").write_text(
+    # Use a unique module name to avoid SQLAlchemy mapper registry pollution
+    (tmp_path / "mysql_models.py").write_text(
         "from sqlalchemy.orm import declarative_base\n"
         "from sqlalchemy import Column, Integer, String\n"
         "Base = declarative_base()\n"
@@ -85,13 +86,20 @@ def test_mysql_full_migration_workflow(mysql_config, tmp_path, monkeypatch):
     )
 
     original_cwd = os.getcwd()
+    original_sys_path = sys.path[:]
     try:
         os.chdir(tmp_path)
         monkeypatch.setenv("DATABASE_URL", MYSQL_URL)
 
         from migrator.core.alembic_backend import AlembicBackend
+        from migrator.core.config import MigratorConfig
 
-        backend = AlembicBackend(mysql_config)
+        config = MigratorConfig(
+            database_url=MYSQL_URL,
+            migrations_dir=tmp_path / "migrations",
+            base_import_path="mysql_models.Base",
+        )
+        backend = AlembicBackend(config)
         backend.init(mysql_config.migrations_dir)
         backend.create_migration("create products", autogenerate=True, use_timestamp=False)
         backend.apply_migrations("head")
@@ -114,6 +122,7 @@ def test_mysql_full_migration_workflow(mysql_config, tmp_path, monkeypatch):
 
     finally:
         os.chdir(original_cwd)
+        sys.path[:] = original_sys_path
         # Clean up alembic_version if left behind
         try:
             engine = create_engine(MYSQL_URL)
