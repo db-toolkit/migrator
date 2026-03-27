@@ -4,12 +4,15 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- Auto-detection of model modules — `migrator init` now scans the project for all classes that subclass the detected `Base` and adds them as imports in the generated `env.py`, so Alembic autogenerate sees all tables without manual configuration
+
 ### Fixed
-- `migrate` command now correctly handles non-interactive environments (e.g. CI, test runners) — `typer.Abort` from `typer.confirm` and `typer.prompt` no longer causes a silent failure; confirmation defaults to proceeding and the existing-tables prompt defaults to cancel
-- `ModelDetector.find_base()` no longer returns stale results from previous calls — project-level modules matching common model paths are now cleared from `sys.modules` at the start of each detection run, preventing incorrect early returns across repeated invocations
-- `show_migration_sql` now correctly captures Alembic SQL output by setting `alembic_cfg.stdout` directly instead of using `redirect_stdout`, which Alembic does not respect
-- `history()` applied/pending status is now accurate for branched migration histories — replaced linear walk with `get_current_heads()` + `down_revision` traversal
-- Removed duplicate `get_pending_migrations` implementation in `AlembicBackend`; now delegates to `MigrationOperations.get_pending_migrations_details()`
+- `migrate` command no longer silently fails in non-interactive environments (CI, pipes) — `typer.Abort` from confirmation prompts is now handled gracefully, defaulting to proceed
+- `alembic.ini` no longer contains hardcoded database credentials — URL is now loaded from `DATABASE_URL` environment variable at runtime in `env.py`, making `alembic.ini` safe to commit
+- `show_migration_sql` (`--dry-run`, `--show-sql`) now correctly captures and displays SQL — previously produced empty output due to Alembic not respecting `redirect_stdout`
+- `history` command applied/pending status is now correct for branched migration histories — previously used a flawed linear walk that misreported status after merges or multiple heads
+- `ModelDetector` no longer returns stale results when called multiple times in the same process — previously cached project modules in `sys.modules` could cause incorrect early returns
 
 ## [0.4.2] - 2025-12-20
 
