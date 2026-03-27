@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Fixed
+- Help output now uses plain text instead of rich tables
+- Added `-h` as shorthand for `--help`
+
 ## [0.5.0] - 2026-03-27
 
 ### Added
