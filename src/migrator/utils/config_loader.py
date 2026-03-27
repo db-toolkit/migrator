@@ -1,6 +1,7 @@
 import importlib.util
 import os
 import sys
+import tomllib
 from pathlib import Path
 from typing import Optional
 
@@ -65,7 +66,6 @@ class ConfigLoader:
                 config = yaml.safe_load(f)
                 return config.get("database", {}).get("url") or config.get("database_url")
         elif config_path.suffix == ".toml":
-            import tomllib
             with open(config_path, "rb") as f:
                 config = tomllib.load(f)
                 return config.get("database", {}).get("url") or config.get("database_url")
@@ -160,10 +160,8 @@ class ConfigLoader:
     @staticmethod
     def _try_config_toml() -> Optional[str]:
         try:
-            import tomllib
-
             with open("config.toml", "rb") as f:
                 config = tomllib.load(f)
                 return config.get("database", {}).get("url") or config.get("database_url")
-        except (ImportError, FileNotFoundError, Exception):
+        except (FileNotFoundError, Exception):
             return None
