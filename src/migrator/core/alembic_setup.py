@@ -1,6 +1,6 @@
 """Alembic environment scaffolding — creates migrations directory, env.py, alembic.ini, script.py.mako"""
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 from alembic.config import Config
 from mako.template import Template

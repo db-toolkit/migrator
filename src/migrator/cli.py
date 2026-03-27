@@ -8,7 +8,11 @@ from rich.table import Table
 from migrator.core.alembic_backend import AlembicBackend
 from migrator.core.config import MigratorConfig
 from migrator.core.detector import ModelDetector
-from migrator.core.error_handler import handle_init_no_base, handle_migrate_error, handle_no_base_tips
+from migrator.core.error_handler import (
+    handle_init_no_base,
+    handle_migrate_error,
+    handle_no_base_tips,
+)
 from migrator.core.logger import error, info, success
 from migrator.utils.validators import sanitize_message, validate_database_url
 from migrator.version import __version__

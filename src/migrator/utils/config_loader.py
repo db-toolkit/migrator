@@ -1,10 +1,10 @@
 import importlib.util
 import os
 import sys
-import tomllib
 from pathlib import Path
 from typing import Optional
 
+import tomllib
 import yaml
 from dotenv import load_dotenv
 

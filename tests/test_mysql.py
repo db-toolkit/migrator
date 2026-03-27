@@ -8,7 +8,6 @@ Tests are skipped automatically if MySQL is not reachable.
 """
 import os
 import sys
-from pathlib import Path
 
 import pytest
 
@@ -72,7 +71,9 @@ def test_mysql_current_returns_none_before_migrations(mysql_config, tmp_path):
 def test_mysql_full_migration_workflow(mysql_config, tmp_path, monkeypatch):
     """init -> makemigrations -> migrate -> downgrade against MySQL"""
     import os
-    from sqlalchemy import create_engine, inspect as sa_inspect
+
+    from sqlalchemy import create_engine
+    from sqlalchemy import inspect as sa_inspect
 
     # Use a unique module name to avoid SQLAlchemy mapper registry pollution
     (tmp_path / "mysql_models.py").write_text(
