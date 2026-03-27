@@ -1,7 +1,4 @@
 import os
-from pathlib import Path
-
-import pytest
 
 from migrator.core.detector import ModelDetector
 
@@ -10,15 +7,15 @@ def test_nested_base_detection(temp_dir):
     """Test Base detection in nested structure"""
     app_dir = temp_dir / "app" / "core"
     app_dir.mkdir(parents=True)
-    
+
     (app_dir / "__init__.py").write_text("")
     (temp_dir / "app" / "__init__.py").write_text("")
-    
+
     (app_dir / "database.py").write_text("""
 from sqlalchemy.orm import declarative_base
 Base = declarative_base()
 """)
-    
+
     original_cwd = os.getcwd()
     try:
         os.chdir(temp_dir)
@@ -32,15 +29,15 @@ def test_explicit_base_path(temp_dir):
     """Test explicit Base path"""
     app_dir = temp_dir / "app" / "core"
     app_dir.mkdir(parents=True)
-    
+
     (app_dir / "__init__.py").write_text("")
     (temp_dir / "app" / "__init__.py").write_text("")
-    
+
     (app_dir / "database.py").write_text("""
 from sqlalchemy.orm import declarative_base
 Base = declarative_base()
 """)
-    
+
     original_cwd = os.getcwd()
     try:
         os.chdir(temp_dir)
@@ -54,15 +51,15 @@ def test_explicit_base_path_with_custom_name(temp_dir):
     """Test explicit Base path with custom attribute name"""
     app_dir = temp_dir / "app" / "db"
     app_dir.mkdir(parents=True)
-    
+
     (app_dir / "__init__.py").write_text("")
     (temp_dir / "app" / "__init__.py").write_text("")
-    
+
     (app_dir / "models.py").write_text("""
 from sqlalchemy.orm import declarative_base
 DBBase = declarative_base()
 """)
-    
+
     original_cwd = os.getcwd()
     try:
         os.chdir(temp_dir)

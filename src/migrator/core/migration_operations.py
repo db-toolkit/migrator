@@ -1,13 +1,12 @@
 """Migration operations and utilities"""
-from datetime import datetime
-from pathlib import Path
-from typing import List, Optional
 import sys
+from datetime import datetime
+from typing import List
 
 from alembic import command
 from alembic.config import Config
 from alembic.script import ScriptDirectory
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine
 
 
 class MigrationOperations:
@@ -23,17 +22,16 @@ class MigrationOperations:
     def get_pending_migrations_details(alembic_cfg: Config) -> List[dict]:
         """Get detailed list of pending migrations"""
         script_dir = ScriptDirectory.from_config(alembic_cfg)
-        
-        from sqlalchemy import create_engine
+
         from alembic.runtime.migration import MigrationContext
-        
+
         db_url = alembic_cfg.get_main_option("sqlalchemy.url")
         engine = create_engine(db_url)
-        
+
         with engine.connect() as connection:
             context = MigrationContext.configure(connection)
             current_rev = context.get_current_revision()
-        
+
         pending = []
         for revision in script_dir.walk_revisions():
             if current_rev is None or revision.revision != current_rev:
@@ -43,7 +41,7 @@ class MigrationOperations:
                 })
             else:
                 break
-        
+
         return list(reversed(pending))
 
     @staticmethod

@@ -34,7 +34,7 @@ class ConfigLoader:
             "+aiomysql": "+pymysql",
             "+aiosqlite": "",
         }
-        
+
         for async_driver, sync_driver in async_drivers.items():
             if async_driver in url:
                 # Only show warning once per session
@@ -45,7 +45,7 @@ class ConfigLoader:
                     ConfigLoader._async_warning_shown = True
                 url = url.replace(async_driver, sync_driver)
                 break
-        
+
         return url
 
     @staticmethod
@@ -53,7 +53,7 @@ class ConfigLoader:
         """Load from explicitly specified config file"""
         if not config_path.exists():
             return None
-        
+
         if config_path.suffix == ".py":
             spec = importlib.util.spec_from_file_location("config", config_path)
             if spec and spec.loader:
@@ -69,7 +69,7 @@ class ConfigLoader:
             with open(config_path, "rb") as f:
                 config = tomllib.load(f)
                 return config.get("database", {}).get("url") or config.get("database_url")
-        
+
         return None
 
     @staticmethod
@@ -80,7 +80,7 @@ class ConfigLoader:
             db_url = ConfigLoader._try_explicit_config(config_path)
             if db_url:
                 return ConfigLoader._normalize_database_url(db_url)
-        
+
         # Find and load .env file
         env_file = ConfigLoader._find_env_file()
         if env_file:

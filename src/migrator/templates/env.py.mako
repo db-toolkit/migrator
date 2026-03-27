@@ -11,6 +11,7 @@ from alembic import context
 sys.path.insert(0, os.getcwd())
 
 ${imports}
+${model_imports}
 
 config = context.config
 

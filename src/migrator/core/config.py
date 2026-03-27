@@ -13,7 +13,7 @@ class MigratorConfig(BaseModel):
 
     @classmethod
     def load(
-        cls, 
+        cls,
         migrations_dir: Optional[Path] = None,
         config_path: Optional[Path] = None
     ) -> "MigratorConfig":

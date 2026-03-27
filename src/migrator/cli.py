@@ -47,9 +47,9 @@ def init(
     try:
         if verbose:
             info("Verbose mode enabled")
-        
+
         info("Detecting project configuration...")
-        
+
         if verbose:
             from migrator.utils.config_loader import ConfigLoader
             env_file = ConfigLoader._find_env_file()
@@ -57,38 +57,38 @@ def init(
                 info(f"Found .env at: {env_file}")
             else:
                 info("No .env file found")
-        
+
         config = MigratorConfig.load(migrations_dir=directory, config_path=config_path)
-        
+
         if verbose:
             info(f"Database URL: {config.database_url[:30]}...")
 
         info("Finding SQLAlchemy Base...")
         base = ModelDetector.find_base(explicit_path=base_path)
-        
+
         # Get the detected import path
         detected_path = ModelDetector.get_detected_import_path()
         if detected_path:
             config.base_import_path = detected_path
-        
+
         if not base:
             error("Could not find SQLAlchemy Base class")
-            
+
             searched = ModelDetector.get_searched_paths()
             if searched:
                 info(f"Searched in: {', '.join(searched[:5])}")
                 if len(searched) > 5:
                     info(f"... and {len(searched) - 5} more locations")
-            
+
             console.print("\n💡 Troubleshooting Tips:")
             console.print("  1. Ensure your models inherit from Base")
             console.print("  2. Check if Base = declarative_base() exists")
             console.print("  3. Verify models are imported in __init__.py")
             console.print("  4. Use --base flag: migrator init --base app.core.database:Base")
             console.print("  5. Check that DATABASE_URL is correctly set")
-            
+
             raise typer.Exit(1)
-        
+
         if verbose:
             info(f"Found Base in: {base.__module__}")
             if config.base_import_path:
@@ -96,7 +96,7 @@ def init(
 
         info(f"Initializing migrations in {directory}...")
         backend = AlembicBackend(config)
-        backend.init(directory)
+        backend.init(directory, base=base)
 
         success(f"Migration environment created at {directory}")
         console.print("\n📁 Structure:")
@@ -121,15 +121,15 @@ def makemigrations(
     """Create new migration"""
     try:
         config = MigratorConfig.load()
-        
+
         if autogenerate and not config.base_import_path:
             base = ModelDetector.find_base(explicit_path=base_path)
-            
+
             # Get the detected import path
             detected_path = ModelDetector.get_detected_import_path()
             if detected_path:
                 config.base_import_path = detected_path
-            
+
             if not base:
                 error("Could not find SQLAlchemy Base class")
                 console.print("\n💡 Troubleshooting Tips:")
@@ -162,7 +162,7 @@ def makemigrations(
         migration_path = backend.create_migration(message, autogenerate, use_timestamp=True)
 
         success(f"Migration created: {migration_path}")
-        
+
         if show_sql:
             console.print("\n📄 Generated SQL:")
             sql = backend.show_migration_sql()
@@ -220,7 +220,7 @@ def migrate(
         # Get pending migrations for confirmation
         from migrator.core.migration_operations import MigrationOperations
         pending = MigrationOperations.get_pending_migrations_details(backend.alembic_cfg)
-        
+
         # Show confirmation prompt unless --yes flag is used
         if pending and not yes:
             if not MigrationOperations.confirm_migration(pending):
@@ -237,7 +237,7 @@ def migrate(
     except Exception as e:
         error(f"Migration failed: {e}")
         error_msg = str(e).lower()
-        
+
         console.print("\n💡 Troubleshooting Tips:")
         if "foreign key constraint" in error_msg:
             console.print("  1. Use 'migrator stamp head' to mark existing database as migrated")
@@ -254,7 +254,7 @@ def migrate(
             console.print("  1. Check migration files for syntax errors")
             console.print("  2. Verify database connection is working")
             console.print("  3. Run 'migrator status' to check current state")
-        
+
         raise typer.Exit(1)
 
 

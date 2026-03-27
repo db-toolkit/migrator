@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import List, Optional
+from typing import Any, List, Optional
 
 from alembic import command
 from alembic.config import Config
@@ -27,32 +27,42 @@ class AlembicBackend(MigrationBackend):
         cfg.set_main_option("sqlalchemy.url", self.config.database_url)
         return cfg
 
-    def init(self, directory: Path) -> None:
+    def init(self, directory: Path, base: Any = None) -> None:
         """Initialize migration environment"""
         directory.mkdir(parents=True, exist_ok=True)
         versions_dir = directory / "versions"
         versions_dir.mkdir(exist_ok=True)
 
-        self._create_env_py(directory)
+        self._create_env_py(directory, base=base)
         self._create_script_mako(directory)
         self._create_alembic_ini(directory)
 
-    def _create_env_py(self, directory: Path) -> None:
+    def _create_env_py(self, directory: Path, base: Any = None) -> None:
         """Create customized env.py"""
         template_content = read_template("env.py.mako")
         template = Template(template_content)
 
         if self.config.base_import_path:
-            parts = self.config.base_import_path.rsplit(".", 1)
-            module_path = parts[0]
-            base_name = parts[1]
+            if ":" in self.config.base_import_path:
+                module_path, base_name = self.config.base_import_path.split(":", 1)
+            else:
+                parts = self.config.base_import_path.rsplit(".", 1)
+                module_path = parts[0]
+                base_name = parts[1]
             imports = f"from {module_path} import {base_name}"
             target_metadata = f"{base_name}.metadata"
         else:
             imports = "# Import your Base here"
             target_metadata = "None"
 
-        content = template.render(imports=imports, target_metadata=target_metadata)
+        model_imports = ""
+        if base is not None:
+            from migrator.core.detector import ModelDetector
+            modules = ModelDetector.find_model_modules(base)
+            if modules:
+                model_imports = "\n".join(f"import {m}  # noqa: F401" for m in modules)
+
+        content = template.render(imports=imports, target_metadata=target_metadata, model_imports=model_imports)
         write_file(directory / "env.py", content)
 
     def _create_script_mako(self, directory: Path) -> None:
@@ -112,10 +122,10 @@ datefmt = %H:%M:%S
         if use_timestamp:
             from migrator.core.migration_operations import MigrationOperations
             message = MigrationOperations.generate_timestamped_message(message)
-        
+
         command.revision(self.alembic_cfg, message=message, autogenerate=autogenerate)
         return self._get_latest_migration()
-    
+
     def show_migration_sql(self, revision: str = "head") -> str:
         """Show SQL for migration without applying"""
         from migrator.core.migration_operations import MigrationOperations

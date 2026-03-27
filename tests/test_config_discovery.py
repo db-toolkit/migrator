@@ -1,7 +1,4 @@
 import os
-from pathlib import Path
-
-import pytest
 
 from migrator.utils.config_loader import ConfigLoader
 
@@ -10,9 +7,9 @@ def test_env_file_in_parent_directory(temp_dir):
     """Test .env discovery in parent directory"""
     backend_dir = temp_dir / "backend"
     backend_dir.mkdir()
-    
+
     (temp_dir / ".env").write_text("DATABASE_URL=postgresql://test")
-    
+
     original_cwd = os.getcwd()
     try:
         os.chdir(backend_dir)
@@ -26,7 +23,7 @@ def test_env_file_in_parent_directory(temp_dir):
 def test_env_file_in_current_directory(temp_dir):
     """Test .env discovery in current directory"""
     (temp_dir / ".env").write_text("DATABASE_URL=postgresql://test")
-    
+
     original_cwd = os.getcwd()
     try:
         os.chdir(temp_dir)
@@ -72,7 +69,7 @@ def test_explicit_config_python(temp_dir):
     """Test explicit Python config file"""
     config_file = temp_dir / "settings.py"
     config_file.write_text('DATABASE_URL = "postgresql://explicit"')
-    
+
     url = ConfigLoader._try_explicit_config(config_file)
     assert url == "postgresql://explicit"
 
@@ -81,7 +78,7 @@ def test_explicit_config_yaml(temp_dir):
     """Test explicit YAML config file"""
     config_file = temp_dir / "config.yaml"
     config_file.write_text("database:\n  url: postgresql://yaml")
-    
+
     url = ConfigLoader._try_explicit_config(config_file)
     assert url == "postgresql://yaml"
 
