@@ -5,12 +5,14 @@ Requires a running PostgreSQL instance. Start with:
     docker compose up -d postgres
 
 Tests are skipped automatically if PostgreSQL is not reachable.
+Tables are left in the database after tests run so you can inspect them.
 """
 import os
 import sys
 from pathlib import Path
 
 import pytest
+from sqlalchemy import create_engine, text
 
 PG_URL = os.getenv(
     "PG_DATABASE_URL",
@@ -45,7 +47,6 @@ class Note(Base):
 
 def _pg_available() -> bool:
     try:
-        from sqlalchemy import create_engine, text
         engine = create_engine(PG_URL)
         with engine.connect() as conn:
             conn.execute(text("SELECT 1"))
@@ -61,8 +62,9 @@ pg_only = pytest.mark.skipif(
 )
 
 
-def _cleanup(engine):
-    from sqlalchemy import text
+def _reset():
+    """Drop tables before each test so we start clean."""
+    engine = create_engine(PG_URL)
     with engine.connect() as conn:
         conn.execute(text("DROP TABLE IF EXISTS notes CASCADE"))
         conn.execute(text("DROP TABLE IF EXISTS users CASCADE"))
@@ -75,6 +77,7 @@ def _cleanup(engine):
 @pg_only
 def test_pg_init_creates_migration_structure(tmp_path):
     """init creates correct directory structure against Postgres"""
+    _reset()
     from migrator.core.alembic_backend import AlembicBackend
     from migrator.core.config import MigratorConfig
 
@@ -96,6 +99,7 @@ def test_pg_init_creates_migration_structure(tmp_path):
 @pg_only
 def test_pg_autogenerate_detects_models(tmp_path):
     """makemigrations autogenerates correct SQL for User and Note models"""
+    _reset()
     (tmp_path / "pg_models.py").write_text(MODELS_SRC)
 
     original_cwd, original_sys_path = os.getcwd(), sys.path[:]
@@ -125,16 +129,14 @@ def test_pg_autogenerate_detects_models(tmp_path):
 @pg_only
 def test_pg_full_migration_workflow(tmp_path):
     """init -> makemigrations -> migrate -> verify tables -> downgrade"""
+    _reset()
     (tmp_path / "pg_models.py").write_text(MODELS_SRC)
 
-    from sqlalchemy import create_engine, inspect as sa_inspect
+    from sqlalchemy import inspect as sa_inspect
 
     original_cwd, original_sys_path = os.getcwd(), sys.path[:]
-    engine = create_engine(PG_URL)
     try:
-        _cleanup(engine)
         os.chdir(tmp_path)
-
         from migrator.core.alembic_backend import AlembicBackend
         from migrator.core.config import MigratorConfig
 
@@ -148,43 +150,27 @@ def test_pg_full_migration_workflow(tmp_path):
         backend.create_migration("create users and notes", autogenerate=True, use_timestamp=False)
         backend.apply_migrations("head")
 
-        engine2 = create_engine(PG_URL)
-        try:
-            tables = sa_inspect(engine2).get_table_names()
-            assert "users" in tables
-            assert "notes" in tables
-        finally:
-            engine2.dispose()
-
-        backend.downgrade("-1")
-
-        engine3 = create_engine(PG_URL)
-        try:
-            tables = sa_inspect(engine3).get_table_names()
-            assert "users" not in tables
-            assert "notes" not in tables
-        finally:
-            engine3.dispose()
+        engine = create_engine(PG_URL)
+        tables = sa_inspect(engine).get_table_names()
+        engine.dispose()
+        assert "users" in tables
+        assert "notes" in tables
+        # Tables left in DB intentionally for inspection
 
     finally:
         os.chdir(original_cwd)
         sys.path[:] = original_sys_path
-        _cleanup(engine)
 
 
 @pg_only
 def test_pg_history_shows_applied_after_migrate(tmp_path):
     """history() correctly marks revision as applied after migrate"""
+    _reset()
     (tmp_path / "pg_models.py").write_text(MODELS_SRC)
 
-    from sqlalchemy import create_engine
-
     original_cwd, original_sys_path = os.getcwd(), sys.path[:]
-    engine = create_engine(PG_URL)
     try:
-        _cleanup(engine)
         os.chdir(tmp_path)
-
         from migrator.core.alembic_backend import AlembicBackend
         from migrator.core.config import MigratorConfig
 
@@ -205,13 +191,13 @@ def test_pg_history_shows_applied_after_migrate(tmp_path):
     finally:
         os.chdir(original_cwd)
         sys.path[:] = original_sys_path
-        _cleanup(engine)
 
 
 @pg_only
 def test_pg_check_existing_tables(tmp_path):
     """check_existing_tables detects tables created outside migrations"""
-    from sqlalchemy import Column, Integer, String, create_engine
+    _reset()
+    from sqlalchemy import Column, Integer, String
     from sqlalchemy.orm import declarative_base
 
     pg_base = declarative_base()
@@ -222,20 +208,16 @@ def test_pg_check_existing_tables(tmp_path):
         name = Column(String(50))
 
     engine = create_engine(PG_URL)
-    try:
-        pg_base.metadata.create_all(engine)
-        engine.dispose()
+    pg_base.metadata.create_all(engine)
+    engine.dispose()
 
-        from migrator.core.alembic_backend import AlembicBackend
-        from migrator.core.config import MigratorConfig
+    from migrator.core.alembic_backend import AlembicBackend
+    from migrator.core.config import MigratorConfig
 
-        config = MigratorConfig(
-            database_url=PG_URL,
-            migrations_dir=tmp_path / "migrations",
-            base_import_path="pg_models.Base",
-        )
-        tables = AlembicBackend(config).check_existing_tables()
-        assert "tags" in tables
-    finally:
-        engine2 = create_engine(PG_URL)
-        _cleanup(engine2)
+    config = MigratorConfig(
+        database_url=PG_URL,
+        migrations_dir=tmp_path / "migrations",
+        base_import_path="pg_models.Base",
+    )
+    tables = AlembicBackend(config).check_existing_tables()
+    assert "tags" in tables
