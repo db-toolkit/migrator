@@ -19,6 +19,11 @@ class ModelDetector:
         cls.searched_paths = []
         cls._detected_import_path = None
 
+        # Ensure cwd is on path once — not repeated in every helper
+        cwd = str(Path.cwd())
+        if cwd not in sys.path:
+            sys.path.insert(0, cwd)
+
         # Clear cached project modules from previous calls so stale imports
         # don't cause early returns (e.g. across test runs).
         _project_roots = {p.split(".")[0] for p in COMMON_MODEL_PATHS}
@@ -45,12 +50,10 @@ class ModelDetector:
 
     @classmethod
     def get_searched_paths(cls) -> List[str]:
-        """Get list of paths that were searched"""
         return cls.searched_paths
 
     @classmethod
     def get_detected_import_path(cls) -> Optional[str]:
-        """Get the detected import path for Base"""
         return getattr(cls, '_detected_import_path', None)
 
     @classmethod
@@ -60,23 +63,9 @@ class ModelDetector:
         Returns importable module paths e.g. ['app.models.user', 'app.models.post'].
         Excludes the module that defines Base itself.
         """
-        seen: set = set()
-        result: List[str] = []
-
-        # The module that defines Base — we don't need to re-import it
         base_module = getattr(base, '__module__', None)
 
-        def _collect_from_registry():
-            for mapper in base.registry.mappers:
-                mn = mapper.class_.__module__
-                if mn and mn not in seen and not mn.startswith("sqlalchemy") and mn != base_module:
-                    seen.add(mn)
-                    result.append(mn)
-
-        _collect_from_registry()
-
-        # Scan project files to trigger imports of not-yet-loaded model modules
-        sys.path.insert(0, str(Path.cwd()))
+        # Collect project files under cwd
         project_files: set = set()
         for py_file in Path.cwd().rglob("*.py"):
             if any(excluded in str(py_file) for excluded in EXCLUDED_DIRS):
@@ -87,22 +76,25 @@ class ModelDetector:
                 module_path = ".".join(module_parts)
                 project_files.add(module_path)
 
-                if module_path in seen or module_path == base_module:
+                if module_path == base_module or module_path in sys.modules:
                     continue
 
-                if module_path not in sys.modules:
-                    try:
-                        importlib.import_module(module_path)
-                    except Exception:
-                        continue
-
-                # After import, re-collect — new subclasses may have registered
-                _collect_from_registry()
-
+                try:
+                    importlib.import_module(module_path)
+                except Exception:
+                    continue
             except Exception:
                 continue
 
-        # Filter result to only modules whose files exist under cwd
+        # Collect all mapped subclass modules once after all imports
+        result: List[str] = []
+        seen: set = set()
+        for mapper in base.registry.mappers:
+            mn = mapper.class_.__module__
+            if mn and mn not in seen and mn != base_module and not mn.startswith("sqlalchemy"):
+                seen.add(mn)
+                result.append(mn)
+
         return [m for m in result if m in project_files]
 
     @staticmethod
@@ -115,7 +107,6 @@ class ModelDetector:
                 module_path = path
                 attr_name = "Base"
 
-            sys.path.insert(0, str(Path.cwd()))
             module = importlib.import_module(module_path)
 
             if hasattr(module, attr_name):
@@ -130,7 +121,6 @@ class ModelDetector:
     @staticmethod
     def _try_import(module_path: str) -> Optional[Any]:
         try:
-            sys.path.insert(0, str(Path.cwd()))
             module = importlib.import_module(module_path)
 
             if hasattr(module, "Base"):
@@ -155,7 +145,6 @@ class ModelDetector:
                 module_parts = list(relative_path.parts[:-1]) + [relative_path.stem]
                 module_path = ".".join(module_parts)
 
-                sys.path.insert(0, str(Path.cwd()))
                 try:
                     module = importlib.import_module(module_path)
                 except ImportError:

@@ -113,9 +113,7 @@ formatter = generic
 format = %(levelname)-5.5s [%(name)s] %(message)s
 datefmt = %H:%M:%S
 """
-        ini_path = directory / "alembic.ini"
-        with open(ini_path, "w") as f:
-            f.write(ini_content)
+        write_file(directory / "alembic.ini", ini_content)
 
     def create_migration(self, message: str, autogenerate: bool = True, use_timestamp: bool = True) -> Path:
         """Create new migration"""
@@ -153,23 +151,28 @@ datefmt = %H:%M:%S
         script_dir = ScriptDirectory.from_config(self.alembic_cfg)
         engine = create_engine(self.config.database_url)
 
-        with engine.connect() as connection:
-            context = MigrationContext.configure(connection)
-            applied_revisions = set(context.get_current_heads())
-            # Walk back through down_revisions to find all applied
-            heads = list(applied_revisions)
-            for head in heads:
-                rev = script_dir.get_revision(head)
-                while rev and rev.down_revision:
-                    down = rev.down_revision
-                    if isinstance(down, tuple):
-                        for d in down:
-                            applied_revisions.add(d)
-                            heads.append(d)
-                    else:
-                        applied_revisions.add(down)
-                        heads.append(down)
-                    rev = script_dir.get_revision(down if not isinstance(down, tuple) else down[0])
+        try:
+            with engine.connect() as connection:
+                context = MigrationContext.configure(connection)
+                applied_revisions = set(context.get_current_heads())
+        finally:
+            engine.dispose()
+
+        # Walk back through ancestry to find all applied revisions
+        visited: set = set()
+        queue = list(applied_revisions)
+        while queue:
+            head = queue.pop()
+            if head in visited:
+                continue
+            visited.add(head)
+            rev = script_dir.get_revision(head)
+            if not rev or not rev.down_revision:
+                continue
+            downs = rev.down_revision if isinstance(rev.down_revision, tuple) else (rev.down_revision,)
+            for d in downs:
+                applied_revisions.add(d)
+                queue.append(d)
 
         all_revisions = list(reversed(list(script_dir.walk_revisions())))
         return [
@@ -190,12 +193,12 @@ datefmt = %H:%M:%S
     def current(self) -> Optional[str]:
         """Get current revision"""
         engine = create_engine(self.config.database_url)
-
-        with engine.connect() as connection:
-            context = MigrationContext.configure(connection)
-            current_rev = context.get_current_revision()
-
-        return current_rev
+        try:
+            with engine.connect() as connection:
+                context = MigrationContext.configure(connection)
+                return context.get_current_revision()
+        finally:
+            engine.dispose()
 
     def stamp(self, revision: str = "head") -> None:
         """Mark database as migrated without running migrations"""
@@ -204,7 +207,9 @@ datefmt = %H:%M:%S
     def check_existing_tables(self) -> List[str]:
         """Check for existing tables in database"""
         engine = create_engine(self.config.database_url)
-        inspector = inspect(engine)
-        return inspector.get_table_names()
+        try:
+            return inspect(engine).get_table_names()
+        finally:
+            engine.dispose()
 
 

@@ -27,10 +27,12 @@ class MigrationOperations:
 
         db_url = alembic_cfg.get_main_option("sqlalchemy.url")
         engine = create_engine(db_url)
-
-        with engine.connect() as connection:
-            context = MigrationContext.configure(connection)
-            current_rev = context.get_current_revision()
+        try:
+            with engine.connect() as connection:
+                context = MigrationContext.configure(connection)
+                current_rev = context.get_current_revision()
+        finally:
+            engine.dispose()
 
         pending = []
         for revision in script_dir.walk_revisions():

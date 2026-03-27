@@ -41,7 +41,7 @@ ENV/
 .coverage
 htmlcov/
 .tox/
-
+test.db
 # Environment
 .env
 .env.local
