@@ -66,7 +66,8 @@ class AlembicBackend(MigrationBackend):
 script_location = {directory}
 prepend_sys_path = .
 version_path_separator = os
-sqlalchemy.url = {self.config.database_url}
+# URL is loaded from DATABASE_URL environment variable at runtime (see env.py)
+sqlalchemy.url = placeholder
 
 [loggers]
 keys = root,sqlalchemy,alembic
