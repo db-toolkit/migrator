@@ -93,3 +93,20 @@ def test_explicit_path_searched_first(temp_dir):
         assert searched[0] == "custom.path:Base"
     finally:
         os.chdir(original_cwd)
+
+
+def test_explicit_path_dot_notation(temp_dir):
+    """Explicit path without colon (dot notation) resolves Base attribute"""
+    app_dir = temp_dir / "myapp"
+    app_dir.mkdir()
+    (app_dir / "__init__.py").write_text("")
+    (app_dir / "db.py").write_text(
+        "from sqlalchemy.orm import declarative_base\nBase = declarative_base()\n"
+    )
+    original_cwd = os.getcwd()
+    try:
+        os.chdir(temp_dir)
+        base = ModelDetector.find_base(explicit_path="myapp.db")
+        assert base is not None
+    finally:
+        os.chdir(original_cwd)

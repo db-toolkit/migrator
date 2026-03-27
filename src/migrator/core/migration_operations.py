@@ -1,5 +1,4 @@
 """Migration operations and utilities"""
-import sys
 from datetime import datetime
 from typing import List
 
@@ -50,10 +49,14 @@ class MigrationOperations:
     def show_migration_sql(alembic_cfg: Config, revision: str = "head") -> str:
         """Generate SQL for migration without applying"""
         import io
+        import sys
+        from contextlib import redirect_stdout
+
         output = io.StringIO()
-        alembic_cfg.stdout = output
-        command.upgrade(alembic_cfg, revision, sql=True)
-        alembic_cfg.stdout = sys.stdout
+        # Alembic sql-mode writes via context which ultimately calls sys.stdout.write
+        # in the generated env.py. redirect_stdout captures that correctly.
+        with redirect_stdout(output):
+            command.upgrade(alembic_cfg, revision, sql=True)
         return output.getvalue()
 
     @staticmethod
@@ -70,6 +73,6 @@ class MigrationOperations:
 
         try:
             return typer.confirm("\nContinue?", default=True)
-        except typer.Abort:
+        except (typer.Abort, OSError):
             # Non-interactive mode — default to proceeding
             return True

@@ -88,3 +88,47 @@ def test_explicit_config_nonexistent(temp_dir):
     config_file = temp_dir / "nonexistent.py"
     url = ConfigLoader._try_explicit_config(config_file)
     assert url is None
+
+
+def test_explicit_config_toml(temp_dir):
+    """Test explicit TOML config file"""
+    config_file = temp_dir / "config.toml"
+    config_file.write_text('[database]\nurl = "postgresql://toml"\n')
+    url = ConfigLoader._try_explicit_config(config_file)
+    assert url == "postgresql://toml"
+
+
+def test_explicit_config_python_sqlalchemy_uri(temp_dir):
+    """Test explicit Python config using SQLALCHEMY_DATABASE_URI"""
+    config_file = temp_dir / "settings.py"
+    config_file.write_text('SQLALCHEMY_DATABASE_URI = "postgresql://sqlalchemy"')
+    url = ConfigLoader._try_explicit_config(config_file)
+    assert url == "postgresql://sqlalchemy"
+
+
+def test_load_database_url_no_source_raises(temp_dir, monkeypatch):
+    """load_database_url raises ValueError when no source found"""
+    import os
+    monkeypatch.delenv("DATABASE_URL", raising=False)
+    monkeypatch.delenv("SQLALCHEMY_DATABASE_URI", raising=False)
+    original_cwd = os.getcwd()
+    try:
+        os.chdir(temp_dir)
+        try:
+            ConfigLoader.load_database_url()
+            assert False, "Should have raised ValueError"
+        except ValueError as e:
+            assert "DATABASE_URL" in str(e)
+    finally:
+        os.chdir(original_cwd)
+
+
+def test_find_env_file_returns_none_when_missing(temp_dir):
+    """_find_env_file returns None when no .env exists in hierarchy"""
+    original_cwd = os.getcwd()
+    try:
+        os.chdir(temp_dir)
+        result = ConfigLoader._find_env_file()
+        assert result is None
+    finally:
+        os.chdir(original_cwd)
