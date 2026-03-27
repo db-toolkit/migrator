@@ -13,7 +13,11 @@ from migrator.core.logger import error, info, success
 from migrator.utils.validators import sanitize_message, validate_database_url
 from migrator.version import __version__
 
-app = typer.Typer(help="🧩 Migrator - Universal Migration CLI")
+app = typer.Typer(
+    help="Migrator - Universal Migration CLI for Python apps",
+    rich_markup_mode=None,
+    context_settings={"help_option_names": ["-h", "--help"]},
+)
 console = Console()
 
 
